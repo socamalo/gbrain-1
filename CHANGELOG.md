@@ -2,6 +2,21 @@
 
 All notable changes to GBrain will be documented in this file.
 
+## [0.4.2] - 2026-04-10
+
+### Changed
+
+- All GitHub Actions pinned to commit SHAs across test, e2e, and release workflows. Prevents supply chain attacks via mutable version tags.
+- Workflow permissions hardened: `contents: read` on test and e2e workflows limits GITHUB_TOKEN blast radius.
+- OpenClaw CI install pinned to v2026.4.9 instead of pulling latest.
+
+### Added
+
+- Gitleaks secret scanning CI job runs on every push and PR. Catches accidentally committed API keys, tokens, and credentials.
+- `.gitleaks.toml` config with allowlists for test fixtures and example files.
+- GitHub Actions SHA maintenance rule in CLAUDE.md so pins stay fresh on every `/ship` and `/review`.
+- S3 Sig V4 TODO for future implementation when S3 storage becomes a deployment path.
+
 ## [0.4.1] - 2026-04-09
 
 ### Added
