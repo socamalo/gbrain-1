@@ -61,10 +61,28 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
     process.exit(1);
   }
 
+  // Lock file to prevent concurrent instances (#14)
+  const lockPath = join(process.env.HOME || '', '.gbrain', 'autopilot.lock');
+  try {
+    mkdirSync(join(process.env.HOME || '', '.gbrain'), { recursive: true });
+    if (existsSync(lockPath)) {
+      const stat = require('fs').statSync(lockPath);
+      const ageMinutes = (Date.now() - stat.mtimeMs) / 60000;
+      if (ageMinutes < 10) {
+        console.error('Another autopilot instance is running (lock file is fresh). Exiting.');
+        process.exit(0);
+      }
+      console.log('Stale lock file found (>10 min). Taking over.');
+    }
+    writeFileSync(lockPath, String(process.pid));
+  } catch { /* best-effort */ }
+
   console.log(`Autopilot starting. Repo: ${repoPath}, interval: ${baseInterval}s`);
 
-  // Signal handling
+  // Signal handling + lock cleanup
   let stopping = false;
+  const cleanup = () => { try { require('fs').unlinkSync(lockPath); } catch {} };
+  process.on('exit', cleanup);
   process.on('SIGTERM', () => { stopping = true; console.log('Autopilot stopping (SIGTERM).'); });
   process.on('SIGINT', () => { stopping = true; console.log('Autopilot stopping (SIGINT).'); });
 
@@ -93,11 +111,10 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
       }
     } catch (e) { logError('sync', e); cycleOk = false; }
 
-    // 2. Extract
+    // 2. Extract (full brain, incremental dedup handles repeats)
     try {
-      const { extractLinksForSlugs, extractTimelineForSlugs } = await import('./extract.ts');
-      // Incremental: extract from recently synced pages (full extract runs separately)
-      // For autopilot, just run embed --stale which catches everything
+      const { runExtract } = await import('./extract.ts');
+      await runExtract(engine, ['all', '--dir', repoPath]);
     } catch (e) { logError('extract', e); cycleOk = false; }
 
     // 3. Embed stale

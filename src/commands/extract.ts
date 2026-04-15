@@ -184,7 +184,7 @@ export function extractTimelineFromContent(content: string, slug: string): Extra
 export async function runExtract(engine: BrainEngine, args: string[]) {
   const subcommand = args[0];
   const dirIdx = args.indexOf('--dir');
-  const brainDir = dirIdx >= 0 ? args[dirIdx + 1] : '.';
+  const brainDir = (dirIdx >= 0 && dirIdx + 1 < args.length) ? args[dirIdx + 1] : '.';
   const dryRun = args.includes('--dry-run');
   const jsonMode = args.includes('--json');
 

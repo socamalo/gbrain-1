@@ -32,8 +32,7 @@ export async function runEmbed(engine: BrainEngine, args: string[]) {
 async function embedPage(engine: BrainEngine, slug: string) {
   const page = await engine.getPage(slug);
   if (!page) {
-    console.error(`Page not found: ${slug}`);
-    process.exit(1);
+    throw new Error(`Page not found: ${slug}`);
   }
 
   // Get existing chunks or create new ones

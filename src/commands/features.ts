@@ -105,7 +105,7 @@ async function scanFeatures(engine: BrainEngine): Promise<FeatureScanResult> {
       title: 'Fix Dead Links',
       pitch: `${health.dead_links} links pointing to non-existent pages.`,
       command: 'gbrain check-backlinks fix',
-      auto_fixable: true,
+      auto_fixable: false,
     });
   }
 
@@ -236,14 +236,14 @@ export async function runFeatures(engine: BrainEngine, args: string[]) {
   }
 
   if (jsonMode) {
-    console.log(JSON.stringify({ ...scan, recommendations: pitchable }, null, 2));
+    const fixResults: Record<string, { success: boolean; output: string }> = {};
     if (autoFix) {
       for (const rec of pitchable.filter(r => r.auto_fixable)) {
-        const result = await executeAutoFix(rec, engine);
+        fixResults[rec.id] = await executeAutoFix(rec, engine);
         offers.accepted[rec.id] = { at: new Date().toISOString().slice(0, 10), version: scan.version };
-        if (!jsonMode) console.log(`  ${result.success ? 'OK' : 'FAIL'}: ${rec.title} — ${result.output}`);
       }
     }
+    console.log(JSON.stringify({ ...scan, recommendations: pitchable, auto_fix_results: autoFix ? fixResults : undefined }, null, 2));
     offers.lastVersion = scan.version;
     offers.lastScan = scan.scan_ts;
     saveOffers(offers);
