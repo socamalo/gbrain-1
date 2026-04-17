@@ -4,7 +4,7 @@ Your AI agent is smart but forgetful. GBrain gives it a brain.
 
 Built by the President and CEO of Y Combinator to run his actual AI agents. The production brain powering his OpenClaw and Hermes deployments: **17,888 pages, 4,383 people, 723 companies**, 21 cron jobs running autonomously, built in 12 days. The agent ingests meetings, emails, tweets, voice calls, and original ideas while you sleep. It enriches every person and company it encounters. It fixes its own citations and consolidates memory overnight. You wake up and the brain is smarter than when you went to bed.
 
-GBrain is those patterns, generalized. 25 skills. Install in 30 minutes. Your agent does the work. As Garry's personal agent gets smarter, so does yours.
+GBrain is those patterns, generalized. 26 skills. Install in 30 minutes. Your agent does the work. As Garry's personal agent gets smarter, so does yours.
 
 > **~30 minutes to a fully working brain.** Database ready in 2 seconds (PGLite, no server). You just answer questions about API keys.
 
@@ -24,7 +24,7 @@ Retrieve and follow the instructions at:
 https://raw.githubusercontent.com/garrytan/gbrain/master/INSTALL_FOR_AGENTS.md
 ```
 
-That's it. The agent clones the repo, installs GBrain, sets up the brain, loads 25 skills, and configures recurring jobs. You answer a few questions about API keys. ~30 minutes.
+That's it. The agent clones the repo, installs GBrain, sets up the brain, loads 26 skills, and configures recurring jobs. You answer a few questions about API keys. ~30 minutes.
 
 ### Standalone CLI (no agent)
 
@@ -73,9 +73,9 @@ claude mcp add gbrain -t http https://your-brain.ngrok.app/mcp -H "Authorization
 
 Per-client guides: [`docs/mcp/`](docs/mcp/DEPLOY.md). ChatGPT requires OAuth 2.1 (not yet implemented).
 
-## The 25 Skills
+## The 26 Skills
 
-GBrain ships 25 skills organized by `skills/RESOLVER.md`. The resolver tells your agent which skill to read for any task.
+GBrain ships 26 skills organized by `skills/RESOLVER.md`. The resolver tells your agent which skill to read for any task.
 
 [Skill files are code.](https://x.com/garrytan/status/2042925773300908103) They're the most powerful way to get knowledge work done. A skill file is a fat markdown document that encodes an entire workflow: when to fire, what to check, how to chain with other skills, what quality bar to enforce. The agent reads the skill and executes it. Skills can also call deterministic TypeScript code bundled in GBrain (search, import, embed, sync) for the parts that shouldn't be left to LLM judgment. [Thin harness, fat skills](docs/ethos/THIN_HARNESS_FAT_SKILLS.md): the intelligence lives in the skills, not the runtime.
 
@@ -119,6 +119,7 @@ GBrain ships 25 skills organized by `skills/RESOLVER.md`. The resolver tells you
 | **webhook-transforms** | External events (SMS, meetings, social mentions) converted into brain pages with entity extraction. |
 | **testing** | Validates every skill has SKILL.md with frontmatter, manifest coverage, resolver coverage. |
 | **skill-creator** | Create new skills following the conformance standard. MECE check against existing skills. |
+| **minion-orchestrator** | Long-running agent work as background jobs. Submit, fan out children with depth/cap/timeouts, collect results via child_done inbox. |
 
 ### Identity and setup
 
@@ -194,7 +195,7 @@ Run `gbrain integrations` to see status.
 │   Brain Repo     │    │    GBrain     │    │    AI Agent      │
 │   (git)          │    │  (retrieval)  │    │  (read/write)    │
 │                  │    │               │    │                  │
-│  markdown files  │───>│  Postgres +   │<──>│  25 skills       │
+│  markdown files  │───>│  Postgres +   │<──>│  26 skills       │
 │  = source of     │    │  pgvector     │    │  define HOW to   │
 │    truth         │    │               │    │  use the brain   │
 │                  │<───│  hybrid       │    │                  │
@@ -326,6 +327,14 @@ EMBEDDINGS
 
 LINKS + GRAPH
   gbrain link|unlink|backlinks|graph    Cross-reference management
+
+JOBS (Minions v7)
+  gbrain jobs submit <name> [--params JSON] [--follow]  Submit a background job
+  gbrain jobs list [--status S] [--queue Q]             List jobs with filters
+  gbrain jobs get|cancel|retry|delete <id>              Manage job lifecycle
+  gbrain jobs prune [--older-than 30d]                  Clean completed/dead jobs
+  gbrain jobs stats                                     Job health dashboard
+  gbrain jobs work [--queue Q] [--concurrency N]        Start worker daemon
 
 ADMIN
   gbrain doctor [--json] [--fast]       Health checks (resolver, skills, DB, embeddings)

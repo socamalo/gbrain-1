@@ -49,7 +49,7 @@ strict behavior when unset.
 - `src/core/enrichment-service.ts` — Global enrichment service: entity slug generation, tier auto-escalation, batch throttling
 - `src/core/data-research.ts` — Recipe validation, field extraction (MRR/ARR regex), dedup, tracker parsing, HTML stripping
 - `src/core/minions/` — Minions job queue: BullMQ-inspired, Postgres-native (queue, worker, backoff, types)
-- `src/core/minions/queue.ts` — MinionQueue class (submit, claim, complete, fail, stall detection, parent-child, cascade-kill, attachments, idempotency)
+- `src/core/minions/queue.ts` — MinionQueue class (submit, claim, complete, fail, stall detection, parent-child, depth/child-cap, per-job timeouts, cascade-kill, attachments, idempotency keys, child_done inbox, removeOnComplete/Fail)
 - `src/core/minions/worker.ts` — MinionWorker class (handler registry, lock renewal, graceful shutdown, timeout safety net)
 - `src/core/minions/attachments.ts` — Attachment validation (path traversal, null byte, oversize, base64, duplicate detection)
 - `src/commands/jobs.ts` — `gbrain jobs` CLI subcommands + `gbrain jobs work` daemon
@@ -99,6 +99,7 @@ strict behavior when unset.
 - `skills/soul-audit/SKILL.md` — 6-phase interview for SOUL.md, USER.md, ACCESS_POLICY.md, HEARTBEAT.md
 - `skills/webhook-transforms/SKILL.md` — External events to brain signals
 - `skills/data-research/SKILL.md` — Structured data research: email-to-tracker pipeline with parameterized YAML recipes
+- `skills/minion-orchestrator/SKILL.md` — Background job orchestration: submit, fan out children with depth/cap/timeouts, collect results via child_done inbox
 - `templates/` — SOUL.md, USER.md, ACCESS_POLICY.md, HEARTBEAT.md templates
 - `skills/migrations/` — Version migration files with feature_pitch YAML frontmatter
 - `src/commands/publish.ts` — Deterministic brain page publisher (code+skill pair, zero LLM calls)
@@ -126,7 +127,7 @@ Key commands added for Minions (job queue):
 
 ## Testing
 
-`bun test` runs all tests (48 unit test files + 8 E2E test files). Unit tests run
+`bun test` runs all tests (49 unit test files + 8 E2E test files). Unit tests run
 without a database. E2E tests skip gracefully when `DATABASE_URL` is not set.
 
 Unit tests: `test/markdown.test.ts` (frontmatter parsing), `test/chunkers/recursive.test.ts`
@@ -220,7 +221,7 @@ stop and remove it before starting a new one.
 
 ## Skills
 
-Read the skill files in `skills/` before doing brain operations. GBrain ships 25 skills
+Read the skill files in `skills/` before doing brain operations. GBrain ships 26 skills
 organized by `skills/RESOLVER.md`:
 
 **Original 8 (conformance-migrated):** ingest (thin router), query, maintain, enrich,
@@ -230,7 +231,7 @@ briefing, migrate, setup, publish.
 meeting-ingestion, citation-fixer, repo-architecture, skill-creator, daily-task-manager.
 
 **Operational + identity:** daily-task-prep, cross-modal-review, cron-scheduler, reports,
-testing, soul-audit, webhook-transforms.
+testing, soul-audit, webhook-transforms, data-research, minion-orchestrator.
 
 **Conventions:** `skills/conventions/` has cross-cutting rules (quality, brain-first,
 model-routing, test-before-bulk, cross-modal). `skills/_brain-filing-rules.md` and
