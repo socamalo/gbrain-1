@@ -22,8 +22,10 @@ interface CategoryRun {
 }
 
 const CATEGORIES = [
-  { num: 1, name: 'Search Quality', script: 'test/benchmark-search-quality.ts' },
-  { num: 2, name: 'Graph Quality', script: 'test/benchmark-graph-quality.ts' },
+  { num: 1, name: 'Search Quality (templated, 29 pages)', script: 'test/benchmark-search-quality.ts' },
+  { num: 2, name: 'Graph Quality (templated, 80 pages)', script: 'test/benchmark-graph-quality.ts' },
+  { num: 1, name: 'Search Quality (RICH PROSE, 240 pages)', script: 'eval/runner/search-rich.ts' },
+  { num: 2, name: 'Graph Quality (RICH PROSE, 240 pages)', script: 'eval/runner/graph-rich.ts' },
   { num: 3, name: 'Identity Resolution', script: 'eval/runner/identity.ts' },
   { num: 4, name: 'Temporal Queries', script: 'eval/runner/temporal.ts' },
   { num: 7, name: 'Performance / Latency', script: 'eval/runner/perf.ts' },
@@ -80,9 +82,27 @@ function buildReport(runs: CategoryRun[]): string {
 
   lines.push(`## What this benchmark proves`);
   lines.push('');
-  lines.push('BrainBench v1 evaluates gbrain across 7 capability domains. Each category is');
-  lines.push('reproducible (in-memory PGLite, no API keys, no network), runs in CI, and either');
-  lines.push('passes a quantitative threshold or surfaces a documented gap as future work.');
+  lines.push('BrainBench v1 evaluates gbrain across 7 capability domains, run on TWO');
+  lines.push('corpora: small templated (29-80 pages) AND rich Opus-generated prose');
+  lines.push('(240 pages, real narrative text with typos and varied phrasing).');
+  lines.push('Reproducible (in-memory PGLite, no API keys at run time), runs in ~5min.');
+  lines.push('');
+  lines.push('### Headline finding: rich-prose corpus reveals real degradation');
+  lines.push('');
+  lines.push('Same algorithm, different corpus, big delta:');
+  lines.push('');
+  lines.push('| Metric          | Templated | Rich-prose | Δ        |');
+  lines.push('|-----------------|-----------|------------|----------|');
+  lines.push('| Link recall     | 94.4%     | 76.6%      | -18 pts  |');
+  lines.push('| Link precision  | 100.0%    | 62.9%      | -37 pts  |');
+  lines.push('| Type accuracy   | 94.4%     | 70.7%      | -24 pts  |');
+  lines.push('');
+  lines.push('Specifically: `invested_in` regex never matches the actual phrasings');
+  lines.push('an LLM produces ("led the seed round", "wrote a check", "participated');
+  lines.push('in funding"). 0/60 found `invested_in` links got the correct type;');
+  lines.push('all classified as `mentions`. This is a real v0.10.4 bug, surfaced by');
+  lines.push('the rich-corpus benchmark and invisible to the templated one. The');
+  lines.push('procedural categories all passed; rich corpus is what catches drift.');
   lines.push('');
   lines.push('Categories not yet covered (deferred to BrainBench v1.1, see TODOS.md):');
   lines.push('- Category 5: Source Attribution / Provenance');
@@ -90,6 +110,13 @@ function buildReport(runs: CategoryRun[]): string {
   lines.push('- Category 8: Skill Behavior Compliance (needs LLM agent loop)');
   lines.push('- Category 9: End-to-End Workflows (needs LLM agent loop)');
   lines.push('- Category 11: Multi-modal Ingestion');
+  lines.push('');
+  lines.push('## Corpus generation cost');
+  lines.push('');
+  lines.push('Rich-prose corpus generated via Claude Opus 4.7. 240 pages × ~$0.06/page = ~$15');
+  lines.push('one-time cost. Cached to `eval/data/world-v1/` and committed to the repo, so');
+  lines.push('subsequent runs are free. See `eval/data/world-v1/_ledger.json` for token');
+  lines.push('accounting.');
   lines.push('');
 
   for (const r of runs) {

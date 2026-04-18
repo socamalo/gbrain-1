@@ -1,17 +1,19 @@
 # BrainBench v1 — 2026-04-18
 
 **Branch:** garrytan/link-timeline-extract
-**Commit:** `452c7eb`
+**Commit:** `331895f`
 **Engine:** PGLite (in-memory)
 
 ## Summary
 
-7 categories run. 7 passed, 0 failed.
+9 categories run. 9 passed, 0 failed.
 
 | # | Category | Status | Script |
 |---|----------|--------|--------|
-| 1 | Search Quality | ✓ pass | `test/benchmark-search-quality.ts` |
-| 2 | Graph Quality | ✓ pass | `test/benchmark-graph-quality.ts` |
+| 1 | Search Quality (templated, 29 pages) | ✓ pass | `test/benchmark-search-quality.ts` |
+| 2 | Graph Quality (templated, 80 pages) | ✓ pass | `test/benchmark-graph-quality.ts` |
+| 1 | Search Quality (RICH PROSE, 240 pages) | ✓ pass | `eval/runner/search-rich.ts` |
+| 2 | Graph Quality (RICH PROSE, 240 pages) | ✓ pass | `eval/runner/graph-rich.ts` |
 | 3 | Identity Resolution | ✓ pass | `eval/runner/identity.ts` |
 | 4 | Temporal Queries | ✓ pass | `eval/runner/temporal.ts` |
 | 7 | Performance / Latency | ✓ pass | `eval/runner/perf.ts` |
@@ -20,9 +22,27 @@
 
 ## What this benchmark proves
 
-BrainBench v1 evaluates gbrain across 7 capability domains. Each category is
-reproducible (in-memory PGLite, no API keys, no network), runs in CI, and either
-passes a quantitative threshold or surfaces a documented gap as future work.
+BrainBench v1 evaluates gbrain across 7 capability domains, run on TWO
+corpora: small templated (29-80 pages) AND rich Opus-generated prose
+(240 pages, real narrative text with typos and varied phrasing).
+Reproducible (in-memory PGLite, no API keys at run time), runs in ~5min.
+
+### Headline finding: rich-prose corpus reveals real degradation
+
+Same algorithm, different corpus, big delta:
+
+| Metric          | Templated | Rich-prose | Δ        |
+|-----------------|-----------|------------|----------|
+| Link recall     | 94.4%     | 76.6%      | -18 pts  |
+| Link precision  | 100.0%    | 62.9%      | -37 pts  |
+| Type accuracy   | 94.4%     | 70.7%      | -24 pts  |
+
+Specifically: `invested_in` regex never matches the actual phrasings
+an LLM produces ("led the seed round", "wrote a check", "participated
+in funding"). 0/60 found `invested_in` links got the correct type;
+all classified as `mentions`. This is a real v0.10.4 bug, surfaced by
+the rich-corpus benchmark and invisible to the templated one. The
+procedural categories all passed; rich corpus is what catches drift.
 
 Categories not yet covered (deferred to BrainBench v1.1, see TODOS.md):
 - Category 5: Source Attribution / Provenance
@@ -31,8 +51,15 @@ Categories not yet covered (deferred to BrainBench v1.1, see TODOS.md):
 - Category 9: End-to-End Workflows (needs LLM agent loop)
 - Category 11: Multi-modal Ingestion
 
+## Corpus generation cost
+
+Rich-prose corpus generated via Claude Opus 4.7. 240 pages × ~$0.06/page = ~$15
+one-time cost. Cached to `eval/data/world-v1/` and committed to the repo, so
+subsequent runs are free. See `eval/data/world-v1/_ledger.json` for token
+accounting.
+
 ---
-# Category 1: Search Quality
+# Category 1: Search Quality (templated, 29 pages)
 
 Status: ✓ PASS (exit 0)
 
@@ -154,13 +181,13 @@ Written to docs/benchmarks/2026-04-18.md
 ```
 
 ---
-# Category 2: Graph Quality
+# Category 2: Graph Quality (templated, 80 pages)
 
 Status: ✓ PASS (exit 0)
 
 ```
 # Graph Quality Benchmark — v0.10.1
-Generated: 2026-04-18T03:50:09
+Generated: 2026-04-18T04:18:17
 
 ## Data
 - 80 pages seeded
@@ -270,6 +297,141 @@ boost (`score *= 1 + 0.05 * log(1 + n)`).
 ```
 
 ---
+# Category 1: Search Quality (RICH PROSE, 240 pages)
+
+Status: ✓ PASS (exit 0)
+
+```
+# BrainBench Category 1 at scale — Rich Corpus Search Quality
+
+Generated: 2026-04-18T04:18:18
+Corpus: 240 rich-prose pages from eval/data/world-v1/
+Queries: 46
+  Migration 2 applied: slugify_existing_pages
+  Migration 3 applied: unique_chunk_index
+  Migration 4 applied: access_tokens_and_mcp_log
+  Migration 5 applied: multi_type_links_constraint
+  Migration 6 applied: timeline_dedup_index
+  Migration 7 applied: drop_timeline_search_trigger
+
+## Seeding corpus + chunks
+Seeded 240 pages with chunks.
+
+## Running extract for backlink boost data
+Links: created 499 from 240 pages (db source)
+
+Done: 499 links, 0 timeline entries from 240 pages
+Links extracted: 499
+
+## Running queries (A: no boost, B: backlink boost)
+
+## Metrics: A (no boost) vs B (backlink boost)
+| Metric         | A: no boost | B: with boost | Δ           |
+|----------------|-------------|---------------|-------------|
+| P@1            | 73.9%       | 78.3%         | +4.3pts     |
+| Recall@5       | 87.0%       | 87.0%         | +0.0pts     |
+| MRR            | 0.79        | 0.81          | +0.03       |
+| Avg rank       | 1.59        | 1.51          | -0.07       |
+
+## Per-query breakdown (first 15)
+| Question                         | A: rank | B: rank | A top-1                    | B top-1                    |
+|----------------------------------|---------|---------|----------------------------|----------------------------|
+| who is Helen Martinez?           | 1       | 1       | people/helen-martinez-87   | people/helen-martinez-87   |
+| who is Victor Taylor?            | 1       | 1       | people/victor-taylor-1     | people/victor-taylor-1     |
+| who is Eric Martinez?            | 1       | 1       | people/eric-martinez-93    | people/eric-martinez-93    |
+| who is Adam Lee?                 | 1       | 1       | people/adam-lee-19         | people/adam-lee-19         |
+| who is Paul Anderson?            | 1       | 1       | people/paul-anderson-23    | people/paul-anderson-23    |
+| who is Helen Johnson?            | 1       | 1       | people/helen-johnson-32    | people/helen-johnson-32    |
+| who is Frank Hernandez?          | 1       | 1       | people/frank-hernandez-31  | people/frank-hernandez-31  |
+| who is Chris Smith?              | 1       | 1       | people/chris-smith-110     | people/chris-smith-110     |
+| who is Ulrich Wang?              | 1       | 1       | people/ulrich-wang-16      | people/ulrich-wang-16      |
+| who is Chris Singh?              | 1       | 1       | people/chris-singh-96      | people/chris-singh-96      |
+| who is Rosa Nakamura?            | 1       | 1       | people/rosa-nakamura-94    | people/rosa-nakamura-94    |
+| who is Mia Brown?                | 1       | 1       | people/mia-brown-0         | people/mia-brown-0         |
+| who is Adam Lopez?               | 1       | 1       | people/adam-lopez-113      | people/adam-lopez-113      |
+| who is Quinten Wang?             | 1       | 1       | people/quinten-wang-17     | people/quinten-wang-17     |
+| who is Sarah Lopez?              | 1       | 1       | people/sarah-lopez-84      | people/sarah-lopez-84      |
+
+## What this benchmark surfaces
+Keyword-only search (no embeddings) against 240 rich-prose pages.
+Queries that found primary in top-5: 40/46
+Queries that missed entirely (not in top-50): 5/46
+
+Without OpenAI embeddings, semantic search is unavailable — the benchmark
+measures pure tsvector/keyword performance on real prose. The backlink boost
+moves well-connected entities up the ranking when keyword scores are tied.
+
+```
+
+---
+# Category 2: Graph Quality (RICH PROSE, 240 pages)
+
+Status: ✓ PASS (exit 0)
+
+```
+# BrainBench Category 2 at scale — Rich Corpus Graph Quality
+
+Generated: 2026-04-18T04:18:19
+Corpus: 240 rich-prose pages from eval/data/world-v1/
+Expected ground-truth links (computed from _facts): 410
+  by type: invested_in=89, attended=153, works_at=50, mentions=90, advises=28
+  Migration 2 applied: slugify_existing_pages
+  Migration 3 applied: unique_chunk_index
+  Migration 4 applied: access_tokens_and_mcp_log
+  Migration 5 applied: multi_type_links_constraint
+  Migration 6 applied: timeline_dedup_index
+  Migration 7 applied: drop_timeline_search_trigger
+
+## Seeding corpus into PGLite
+Seeded: 240 pages, 0 links pre-extract
+
+## Running extract --source db (auto-link extraction on rich prose)
+Links: created 499 from 240 pages (db source)
+
+Done: 499 links, 0 timeline entries from 240 pages
+Timeline: created 2208 entries from 240 pages (db source)
+
+Done: 0 links, 2208 timeline entries from 240 pages
+After extract: 499 links, 2208 timeline entries
+Links: created 499 from 240 pages (db source)
+
+Done: 499 links, 0 timeline entries from 240 pages
+
+## Metrics
+| Metric            | Value     |
+|-------------------|-----------|
+| Total extracted   | 499        |
+| Expected (truth)  | 410        |
+| Link recall       | 76.6%     |
+| Link precision    | 62.9%     |
+| Type accuracy     | 70.7%     |
+| Idempotent        | true      |
+
+## Per-link-type breakdown
+| Link type    | Expected | Found (any type) | Correct type | Recall  | Type acc |
+|--------------|----------|------------------|--------------|---------|----------|
+| invested_in  | 89       | 60               | 0            | 67.4%   | 0.0%     |
+| attended     | 153      | 131              | 131          | 85.6%   | 100.0%   |
+| works_at     | 50       | 50               | 29           | 100.0%  | 58.0%    |
+| mentions     | 90       | 56               | 56           | 62.2%   | 100.0%   |
+| advises      | 28       | 17               | 6            | 60.7%   | 35.3%    |
+
+## Type confusion (predicted -> { actual })
+  mentions: {"invested_in":52,"works_at":21,"mentions":56,"advises":11}
+  attended: {"attended":131}
+  works_at: {"works_at":29}
+  advises: {"invested_in":8,"advises":6}
+
+## Comparison vs templated 80-page benchmark (test/benchmark-graph-quality.ts)
+| Metric          | Templated 80-page | Rich-prose 240-page |
+|-----------------|-------------------|---------------------|
+| Link recall     | 94.4%             | 76.6%               |
+| Link precision  | 100.0%            | 62.9%               |
+| Type accuracy   | 94.4%             | 70.7%               |
+
+```
+
+---
 # Category 3: Identity Resolution
 
 Status: ✓ PASS (exit 0)
@@ -277,7 +439,7 @@ Status: ✓ PASS (exit 0)
 ```
 # BrainBench Category 3: Identity Resolution
 
-Generated: 2026-04-18T03:50:10
+Generated: 2026-04-18T04:18:21
 Entities: 100
 Aliases per entity: 3 documented + 5 undocumented = 8 total
   Migration 2 applied: slugify_existing_pages
@@ -323,7 +485,7 @@ Status: ✓ PASS (exit 0)
 ```
 # BrainBench Category 4: Temporal Queries
 
-Generated: 2026-04-18T03:50:11
+Generated: 2026-04-18T04:18:22
 Events: 725
 Entities: 50
 As-of queries: 50
@@ -373,7 +535,7 @@ Status: ✓ PASS (exit 0)
 ```
 # BrainBench Category 7: Performance / Latency
 
-Generated: 2026-04-18T03:50:13
+Generated: 2026-04-18T04:18:23
 Engine: PGLite (in-memory)
 
 ## Scale: 1000 pages
@@ -384,19 +546,19 @@ Engine: PGLite (in-memory)
   Migration 5 applied: multi_type_links_constraint
   Migration 6 applied: timeline_dedup_index
   Migration 7 applied: drop_timeline_search_trigger
-Bulk putPage: 1000 pages in 0.2s = 4775.4 pages/sec
-Bulk addLink: 2850 links in 0.4s = 7702.1 links/sec
-  get_page               P50=0.09ms  P95=0.18ms  P99=0.31ms  (n=50)
-  get_links              P50=0.15ms  P95=0.38ms  P99=1.01ms  (n=50)
-  get_backlinks          P50=0.16ms  P95=0.35ms  P99=0.36ms  (n=50)
-  get_backlinks_hub      P50=0.34ms  P95=0.51ms  P99=0.51ms  (n=20)
-  get_timeline           P50=0.12ms  P95=0.33ms  P99=0.35ms  (n=50)
-  get_stats              P50=0.87ms  P95=2.76ms  P99=2.76ms  (n=10)
-  list_pages_50          P50=0.53ms  P95=1.00ms  P99=1.00ms  (n=20)
-  search_keyword         P50=0.18ms  P95=0.57ms  P99=0.86ms  (n=30)
-  traverse_paths_d1      P50=1.43ms  P95=2.54ms  P99=2.54ms  (n=10)
-  traverse_paths_d2      P50=10.05ms  P95=12.67ms  P99=12.67ms  (n=10)
-  putPage_single         P50=0.13ms  P95=0.39ms  P99=0.48ms  (n=30)
+Bulk putPage: 1000 pages in 0.2s = 4861.6 pages/sec
+Bulk addLink: 2850 links in 0.4s = 7704.9 links/sec
+  get_page               P50=0.09ms  P95=0.11ms  P99=0.22ms  (n=50)
+  get_links              P50=0.15ms  P95=0.33ms  P99=0.60ms  (n=50)
+  get_backlinks          P50=0.14ms  P95=0.29ms  P99=0.38ms  (n=50)
+  get_backlinks_hub      P50=0.30ms  P95=0.38ms  P99=0.38ms  (n=20)
+  get_timeline           P50=0.11ms  P95=0.36ms  P99=0.55ms  (n=50)
+  get_stats              P50=0.85ms  P95=2.66ms  P99=2.66ms  (n=10)
+  list_pages_50          P50=0.49ms  P95=1.08ms  P99=1.08ms  (n=20)
+  search_keyword         P50=0.20ms  P95=0.71ms  P99=0.79ms  (n=30)
+  traverse_paths_d1      P50=1.32ms  P95=2.60ms  P99=2.60ms  (n=10)
+  traverse_paths_d2      P50=10.30ms  P95=12.62ms  P99=12.62ms  (n=10)
+  putPage_single         P50=0.13ms  P95=0.48ms  P99=0.49ms  (n=30)
 
 ## Scale: 10000 pages
 
@@ -406,19 +568,19 @@ Bulk addLink: 2850 links in 0.4s = 7702.1 links/sec
   Migration 5 applied: multi_type_links_constraint
   Migration 6 applied: timeline_dedup_index
   Migration 7 applied: drop_timeline_search_trigger
-Bulk putPage: 10000 pages in 1.6s = 6344.0 pages/sec
-Bulk addLink: 28500 links in 3.3s = 8688.8 links/sec
-  get_page               P50=0.08ms  P95=0.10ms  P99=0.14ms  (n=50)
-  get_links              P50=0.13ms  P95=0.24ms  P99=0.58ms  (n=50)
-  get_backlinks          P50=0.14ms  P95=0.34ms  P99=0.57ms  (n=50)
-  get_backlinks_hub      P50=0.29ms  P95=0.32ms  P99=0.32ms  (n=20)
-  get_timeline           P50=0.11ms  P95=0.30ms  P99=0.34ms  (n=50)
-  get_stats              P50=3.60ms  P95=7.26ms  P99=7.26ms  (n=10)
-  list_pages_50          P50=1.58ms  P95=2.54ms  P99=2.54ms  (n=20)
-  search_keyword         P50=0.19ms  P95=0.54ms  P99=0.63ms  (n=30)
-  traverse_paths_d1      P50=2.08ms  P95=3.63ms  P99=3.63ms  (n=10)
-  traverse_paths_d2      P50=91.07ms  P95=92.09ms  P99=92.09ms  (n=10)
-  putPage_single         P50=0.13ms  P95=0.28ms  P99=0.54ms  (n=30)
+Bulk putPage: 10000 pages in 1.6s = 6272.4 pages/sec
+Bulk addLink: 28500 links in 3.2s = 8782.2 links/sec
+  get_page               P50=0.08ms  P95=0.09ms  P99=0.14ms  (n=50)
+  get_links              P50=0.14ms  P95=0.25ms  P99=0.51ms  (n=50)
+  get_backlinks          P50=0.13ms  P95=0.16ms  P99=0.21ms  (n=50)
+  get_backlinks_hub      P50=0.29ms  P95=0.49ms  P99=0.49ms  (n=20)
+  get_timeline           P50=0.12ms  P95=0.29ms  P99=0.36ms  (n=50)
+  get_stats              P50=3.69ms  P95=6.97ms  P99=6.97ms  (n=10)
+  list_pages_50          P50=1.49ms  P95=2.52ms  P99=2.52ms  (n=20)
+  search_keyword         P50=0.18ms  P95=0.50ms  P99=0.65ms  (n=30)
+  traverse_paths_d1      P50=2.06ms  P95=3.76ms  P99=3.76ms  (n=10)
+  traverse_paths_d2      P50=90.84ms  P95=92.82ms  P99=92.82ms  (n=10)
+  putPage_single         P50=0.13ms  P95=0.20ms  P99=0.54ms  (n=30)
 
 ```
 
@@ -430,7 +592,7 @@ Status: ✓ PASS (exit 0)
 ```
 # BrainBench Category 10: Robustness / Adversarial
 
-Generated: 2026-04-18T03:50:21
+Generated: 2026-04-18T04:18:32
   Migration 2 applied: slugify_existing_pages
   Migration 3 applied: unique_chunk_index
   Migration 4 applied: access_tokens_and_mcp_log
@@ -521,7 +683,7 @@ Status: ✓ PASS (exit 0)
 ```
 # BrainBench Category 12: MCP Operation Contract
 
-Generated: 2026-04-18T03:50:52
+Generated: 2026-04-18T04:19:02
 Operations available: 30
   Migration 2 applied: slugify_existing_pages
   Migration 3 applied: unique_chunk_index
@@ -560,7 +722,7 @@ Operations available: 30
   ✓ " injection": invalid byte sequence for encoding "UTF8": 0x00
 
 ## Resource exhaustion: large inputs
-  ✓ 10MB query: 395ms
+  ✓ 10MB query: 462ms
 
 ## Sanity: every operation has a handler
   30/30 operations have handlers
@@ -583,6 +745,8 @@ Each category can also run individually:
 ```bash
 bun test/benchmark-search-quality.ts
 bun test/benchmark-graph-quality.ts
+bun eval/runner/search-rich.ts
+bun eval/runner/graph-rich.ts
 bun eval/runner/identity.ts
 bun eval/runner/temporal.ts
 bun eval/runner/perf.ts
