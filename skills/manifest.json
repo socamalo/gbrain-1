@@ -133,6 +133,11 @@
       "name": "minion-orchestrator",
       "path": "minion-orchestrator/SKILL.md",
       "description": "Manage background agents via Minions job queue. Submit, monitor, steer, pause/resume, replay. Replaces sessions_spawn for durable observable agents."
+    },
+    {
+      "name": "skillify",
+      "path": "skillify/SKILL.md",
+      "description": "Meta skill. Turn any raw feature into a properly-skilled, tested, resolvable, evaled unit. Paired with gbrain check-resolvable gives user-controllable auto-skill-creation."
     }
   ],
   "dependencies": {
