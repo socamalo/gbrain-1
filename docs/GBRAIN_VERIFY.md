@@ -224,11 +224,11 @@ heuristics won't find them — file an issue with a sample page.
 
 ---
 
-## 8. JSONB Frontmatter Integrity (v0.12.1)
+## 8. JSONB Frontmatter Integrity (v0.12.2)
 
-Postgres-backed brains created before v0.12.1 had double-encoded JSONB columns
+Postgres-backed brains created before v0.12.2 had double-encoded JSONB columns
 (`frontmatter->>'key'` returned NULL, GIN indexes were inert). `gbrain upgrade`
-runs `gbrain repair-jsonb` automatically via the `v0_12_1` orchestrator.
+runs `gbrain repair-jsonb` automatically via the `v0_12_2` orchestrator.
 Verify the repair succeeded.
 
 **Command:**
@@ -285,7 +285,7 @@ gbrain check-update --json
 # 7. Knowledge graph populated (links + timeline > 0)
 gbrain stats | grep -E 'links|timeline'
 
-# 8. JSONB integrity (v0.12.1 — Postgres only, PGLite always 0)
+# 8. JSONB integrity (v0.12.2 — Postgres only, PGLite always 0)
 gbrain repair-jsonb --dry-run --json
 ```
 

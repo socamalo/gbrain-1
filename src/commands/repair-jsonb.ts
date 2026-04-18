@@ -3,8 +3,8 @@
  * literals due to the v0.12.0-and-earlier double-encode bug.
  *
  * Background: postgres-engine.ts wrote frontmatter and other JSONB columns
- * via `${JSON.stringify(value)}::jsonb`, which postgres.js v3 stringified
- * AGAIN on the wire. Result: every `frontmatter->>'key'` query returned NULL
+ * via the buggy `JSON.stringify(value)`-then-cast-to-jsonb interpolation
+ * pattern, which postgres.js v3 stringified AGAIN on the wire. Result: every `frontmatter->>'key'` query returned NULL
  * on Postgres-backed brains; GIN indexes were inert. PGLite was unaffected
  * (different driver path). v0.12.1 fixes the writes (sql.json) but existing
  * rows stay broken until they're rewritten — that's what this command does.

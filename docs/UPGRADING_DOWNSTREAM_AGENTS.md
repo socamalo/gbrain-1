@@ -179,9 +179,9 @@ Timeline entries still need explicit `gbrain timeline-add` calls.
 
 ---
 
-## v0.12.1 hotfix (data-correctness, no skill edits)
+## v0.12.2 hotfix (data-correctness, no skill edits)
 
-v0.12.1 is a Postgres data-correctness hotfix. No forked skill files need to
+v0.12.2 is a Postgres data-correctness hotfix. No forked skill files need to
 change — the skill contracts are unchanged. But you DO need to run the migration,
 and you should know about one behavior change in markdown parsing.
 
@@ -191,7 +191,7 @@ and you should know about one behavior change in markdown parsing.
 gbrain upgrade
 ```
 
-The `v0_12_1` orchestrator runs `gbrain repair-jsonb` automatically. It rewrites
+The `v0_12_2` orchestrator runs `gbrain repair-jsonb` automatically. It rewrites
 rows where `jsonb_typeof = 'string'` across `pages.frontmatter`, `raw_data.data`,
 `ingest_log.pages_updated`, `files.metadata`, and `page_versions.frontmatter`.
 Idempotent, safe to re-run. PGLite brains no-op cleanly.
@@ -204,7 +204,7 @@ gbrain repair-jsonb --dry-run --json    # expect totalRepaired: 0
 
 ### 2. Recover any truncated wiki articles
 
-If your brain imported wiki-style markdown before v0.12.1, some pages were
+If your brain imported wiki-style markdown before v0.12.2, some pages were
 silently truncated (any standalone `---` in body content was treated as a
 timeline separator). Re-import from source:
 

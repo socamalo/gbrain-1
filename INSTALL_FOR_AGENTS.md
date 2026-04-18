@@ -146,8 +146,8 @@ For v0.12.0+ specifically: if your brain was created before v0.12.0, run
 `gbrain extract links --source db && gbrain extract timeline --source db` to
 backfill the new graph layer (see Step 4.5 above).
 
-For v0.12.1+ specifically: if your brain is Postgres- or Supabase-backed and
-predates v0.12.1, the `v0_12_1` migration runs `gbrain repair-jsonb`
+For v0.12.2+ specifically: if your brain is Postgres- or Supabase-backed and
+predates v0.12.2, the `v0_12_2` migration runs `gbrain repair-jsonb`
 automatically during `gbrain post-upgrade` to fix the double-encoded JSONB
 columns. PGLite brains no-op. If wiki-style imports were truncated by the old
 `splitBody` bug, run `gbrain sync --full` after upgrading to rebuild

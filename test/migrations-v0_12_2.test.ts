@@ -1,5 +1,5 @@
 /**
- * Tests for the v0.12.1 JSONB-double-encode-repair orchestrator.
+ * Tests for the v0.12.2 JSONB-double-encode-repair orchestrator.
  *
  * Covers the contract that makes this migration safe to ship:
  *   - Registered in the TS registry (so apply-migrations sees it).
@@ -13,20 +13,20 @@
 
 import { describe, test, expect } from 'bun:test';
 
-describe('v0.12.1 — JSONB double-encode repair migration', () => {
+describe('v0.12.2 — JSONB double-encode repair migration', () => {
   test('registered in the TS migration registry', async () => {
     const { migrations, getMigration } = await import('../src/commands/migrations/index.ts');
     const versions = migrations.map(m => m.version);
-    expect(versions).toContain('0.12.1');
-    const m = getMigration('0.12.1');
+    expect(versions).toContain('0.12.2');
+    const m = getMigration('0.12.2');
     expect(m).not.toBeNull();
     expect(m!.featurePitch.headline).toContain('JSONB');
     expect(typeof m!.orchestrator).toBe('function');
   });
 
   test('feature pitch lists the affected columns and the recovery path', async () => {
-    const { v0_12_1 } = await import('../src/commands/migrations/v0_12_1.ts');
-    const desc = v0_12_1.featurePitch.description ?? '';
+    const { v0_12_2 } = await import('../src/commands/migrations/v0_12_2.ts');
+    const desc = v0_12_2.featurePitch.description ?? '';
     expect(desc).toContain('pages.frontmatter');
     expect(desc).toContain('raw_data.data');
     expect(desc).toContain('ingest_log.pages_updated');
@@ -36,20 +36,20 @@ describe('v0.12.1 — JSONB double-encode repair migration', () => {
   });
 
   test('phase functions exported for unit testing', async () => {
-    const { __testing } = await import('../src/commands/migrations/v0_12_1.ts');
+    const { __testing } = await import('../src/commands/migrations/v0_12_2.ts');
     expect(typeof __testing.phaseASchema).toBe('function');
     expect(typeof __testing.phaseBRepair).toBe('function');
     expect(typeof __testing.phaseCVerify).toBe('function');
   });
 
   test('dry-run skips all side-effect phases', async () => {
-    const { v0_12_1 } = await import('../src/commands/migrations/v0_12_1.ts');
-    const result = await v0_12_1.orchestrator({
+    const { v0_12_2 } = await import('../src/commands/migrations/v0_12_2.ts');
+    const result = await v0_12_2.orchestrator({
       yes: true,
       dryRun: true,
       noAutopilotInstall: true,
     });
-    expect(result.version).toBe('0.12.1');
+    expect(result.version).toBe('0.12.2');
     expect(result.phases.length).toBeGreaterThanOrEqual(3);
     for (const p of result.phases) {
       expect(p.status).toBe('skipped');
