@@ -4,6 +4,8 @@ Your AI agent is smart but forgetful. GBrain gives it a brain.
 
 Built by the President and CEO of Y Combinator to run his actual AI agents. The production brain powering his OpenClaw and Hermes deployments: **17,888 pages, 4,383 people, 723 companies**, 21 cron jobs running autonomously, built in 12 days. The agent ingests meetings, emails, tweets, voice calls, and original ideas while you sleep. It enriches every person and company it encounters. It fixes its own citations and consolidates memory overnight. You wake up and the brain is smarter than when you went to bed.
 
+The brain wires itself. Every page write extracts entity references and creates typed links (`attended`, `works_at`, `invested_in`, `founded`, `advises`) with zero LLM calls. Hybrid search. Self-wiring knowledge graph. Structured timeline. Backlink-boosted ranking. Ask "who works at Acme AI?" or "what did Bob invest in this quarter?" and get answers vector search alone can't reach. Benchmarked: **94% link recall, 94% type accuracy** on a synthetic 80-page graph.
+
 GBrain is those patterns, generalized. 25 skills. Install in 30 minutes. Your agent does the work. As Garry's personal agent gets smarter, so does yours.
 
 > **~30 minutes to a fully working brain.** Database ready in 2 seconds (PGLite, no server). You just answer questions about API keys.
@@ -146,6 +148,7 @@ Signal arrives (meeting, email, tweet, link)
   -> Brain-ops: check the brain first (gbrain search, gbrain get)
   -> Respond with full context
   -> Write: update brain pages with new information + citations
+  -> Auto-link: typed relationships extracted on every write (zero LLM calls)
   -> Sync: gbrain indexes changes for next query
 ```
 
@@ -229,6 +232,36 @@ want, which you can't learn any other way.
 ```
 
 Above the `---`: **compiled truth**. Your current best understanding. Gets rewritten when new evidence changes the picture. Below: **timeline**. Append-only evidence trail. Never edited, only added to.
+
+## Knowledge Graph
+
+Pages aren't just text. Every mention of a person, company, or concept becomes a typed link in a structured graph. The brain wires itself.
+
+```
+Write a meeting page mentioning Alice and Acme AI
+  -> Auto-link extracts entity refs from content (zero LLM calls)
+  -> Infers types: meeting page + person ref => `attended`
+                   "CEO of X" pattern        => `works_at`
+                   "invested in"             => `invested_in`
+                   "advises", "advisor"      => `advises`
+                   "founded", "co-founded"   => `founded`
+  -> Reconciles stale links: edits remove links no longer in content
+  -> Backlinks rank well-connected entities higher in search
+```
+
+```bash
+gbrain graph-query people/alice --type attended --depth 2
+# returns who Alice met with, transitively
+```
+
+The graph powers questions vector search can't: "who works at Acme AI?", "what has Bob invested in?", "find the connection between Alice and Carol". Backfill an existing brain in one command:
+
+```bash
+gbrain extract links --source db        # wire up the existing 29K pages
+gbrain extract timeline --source db     # extract dated events from markdown timelines
+```
+
+Then ask graph questions or watch the search ranking improve. Benchmarked: **94% link recall, 94% type accuracy, 100% relational recall** on a synthetic 80-page graph. See [docs/benchmarks/2026-04-18-graph-quality.md](docs/benchmarks/2026-04-18-graph-quality.md).
 
 ## Search
 
@@ -325,7 +358,11 @@ EMBEDDINGS
   gbrain embed [<slug>|--all|--stale]   Generate/refresh embeddings
 
 LINKS + GRAPH
-  gbrain link|unlink|backlinks|graph    Cross-reference management
+  gbrain link|unlink|backlinks          Cross-reference management
+  gbrain extract links|timeline|all     Batch backfill from existing pages
+                                        (--source db|fs, --type, --since, --dry-run)
+  gbrain graph-query <slug>             Typed traversal (--type T --depth N
+                                        --direction in|out|both)
 
 ADMIN
   gbrain doctor [--json] [--fast]       Health checks (resolver, skills, DB, embeddings)
@@ -367,6 +404,10 @@ The skills in this repo are those patterns, generalized. What took 11 days to bu
 **Reference:**
 - [GBRAIN_V0.md](docs/GBRAIN_V0.md) ... Full product spec
 - [CHANGELOG.md](CHANGELOG.md) ... Version history
+
+**Benchmarks:**
+- [Search Quality (PR #64)](docs/benchmarks/2026-04-14-search-quality.md) ... compiled truth boost + intent classifier
+- [Graph Quality (PR #188)](docs/benchmarks/2026-04-18-graph-quality.md) ... auto-link + typed inference + relational queries
 
 ## Contributing
 
