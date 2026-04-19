@@ -16,7 +16,7 @@
  * are skipped. Running twice is a no-op on the second pass.
  *
  * Reversibility: every page touched is logged to
- * ~/.gbrain/migrations/v0_13_0-rollback.jsonl with its pre-migration
+ * ~/.gbrain/migrations/v0_13_1-rollback.jsonl with its pre-migration
  * frontmatter snapshot. Roll back by re-applying those snapshots via
  * `gbrain apply-migrations --rollback v0.13.0` (future CLI; not in scope).
  *
@@ -45,7 +45,7 @@ import type { BrainEngine } from '../../core/engine.ts';
 import { appendCompletedMigration } from '../../core/preferences.ts';
 
 const ROLLBACK_DIR = join(homedir(), '.gbrain', 'migrations');
-const ROLLBACK_FILE = join(ROLLBACK_DIR, 'v0_13_0-rollback.jsonl');
+const ROLLBACK_FILE = join(ROLLBACK_DIR, 'v0_13_1-rollback.jsonl');
 const BATCH_SIZE = 100;
 
 // ---------------------------------------------------------------------------
@@ -208,7 +208,7 @@ async function orchestrator(opts: OrchestratorOpts): Promise<OrchestratorResult>
   phases.push(connectRes);
   if (connectRes.status !== 'complete' || !engine) {
     return {
-      version: '0.13.0',
+      version: '0.13.1',
       status: connectRes.status === 'skipped' ? 'partial' : 'failed',
       phases,
     };
@@ -218,7 +218,7 @@ async function orchestrator(opts: OrchestratorOpts): Promise<OrchestratorResult>
     const { result: snapRes, slugs } = await phaseBSnapshot(engine);
     phases.push(snapRes);
     if (snapRes.status !== 'complete') {
-      return { version: '0.13.0', status: 'failed', phases };
+      return { version: '0.13.1', status: 'failed', phases };
     }
 
     const { result: gfRes, detail: gfDetail } = await phaseCGrandfather(engine, slugs, opts);
@@ -236,7 +236,7 @@ async function orchestrator(opts: OrchestratorOpts): Promise<OrchestratorResult>
     if (!opts.dryRun && status === 'complete') {
       try {
         appendCompletedMigration({
-          version: '0.13.0',
+          version: '0.13.1',
           completed_at: new Date().toISOString(),
           status: 'complete',
           phases: phases.map(p => ({ name: p.name, status: p.status })),
@@ -253,7 +253,7 @@ async function orchestrator(opts: OrchestratorOpts): Promise<OrchestratorResult>
     }
 
     return {
-      version: '0.13.0',
+      version: '0.13.1',
       status,
       phases,
       files_rewritten: filesRewritten,
@@ -284,8 +284,8 @@ function appendRollbackEntry(entry: { slug: string; pre_frontmatter: Record<stri
 // Export
 // ---------------------------------------------------------------------------
 
-export const v0_13_0: Migration = {
-  version: '0.13.0',
+export const v0_13_1: Migration = {
+  version: '0.13.1',
   featurePitch: {
     headline: 'BrainWriter integrity + grandfather protection for existing pages.',
     description:
@@ -293,7 +293,7 @@ export const v0_13_0: Migration = {
       'validators (citation / link / back-link / triple-HR) don’t reject legacy ' +
       'content. Pages keep passing writes through unchanged; `gbrain integrity ' +
       '--auto` clears the flag per-page once citations are repaired. Rollback ' +
-      'log at ~/.gbrain/migrations/v0_13_0-rollback.jsonl.',
+      'log at ~/.gbrain/migrations/v0_13_1-rollback.jsonl.',
   },
   orchestrator,
 };
